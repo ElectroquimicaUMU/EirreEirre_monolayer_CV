@@ -1,10 +1,14 @@
 import streamlit as st
 import matplotlib.pyplot as plt
+import numpy as np
+import io
+
 from main import CVsim, FRT
 
 st.set_page_config(page_title="MH vs BV Simulation", layout="wide")
-st.title("Marcus-Hush vs Butler-Volmer Simulation")
+st.title("Marcus–Hush vs Butler–Volmer CV Simulation")
 
+# Sidebar parameters
 with st.sidebar:
     st.header("Simulation Parameters")
     lambda1 = st.slider("λ (Marcus–Hush)", 0.1, 2.0, 0.5, step=0.1)
@@ -17,34 +21,53 @@ with st.sidebar:
     Efin = st.number_input("Final E (Efin)", value=-0.7)
     rate = st.number_input("Scan Rate (V/s)", value=0.1)
 
-Pot, IntMH, IntBV, kMH1_s, kMH2_s, kBV1_s, kBV2_s = CVsim(
-    lambda1 * FRT, k01, k02, E02, alpha, Es, Ein, Efin, rate
-)
+# Run simulation
+result = CVsim(lambda1 * FRT, k01, k02, E02, alpha, Es, Ein, Efin, rate)
+E = result.Pot[1:]
 
-E = Pot[1:]
-
-# --- Voltammograms ---
+# ------------------ Voltammogram Plot ------------------
 st.subheader("Voltammogram (Ψ vs E)")
 fig1, ax1 = plt.subplots()
-ax1.plot(E, IntMH[1:], label="MH")
-ax1.plot(E, IntBV[1:], "r--", label="BV")
+ax1.plot(E, result.IntMH[1:], label="MH")
+ax1.plot(E, result.IntBV[1:], "r--", label="BV")
 ax1.set_xlabel("E - E₀₁ / V")
 ax1.set_ylabel("Ψ (Bard)")
 ax1.legend()
 ax1.grid(True)
 st.pyplot(fig1)
 
-# --- Rate Constants ---
-st.subheader("Rate Constants k_red(E)")
+# ------------------ Surface Excess Plot ------------------
+st.subheader("Surface Excesses (MH only)")
 fig2, ax2 = plt.subplots()
-E_half = E[:len(E)//2]
-ax2.semilogy(E_half, kBV1_s[1:len(E)//2], "r--", label="BV k_red, step 1")
-ax2.semilogy(E_half, kBV2_s[1:len(E)//2], "m--", label="BV k_red, step 2")
-ax2.semilogy(E_half, kMH1_s[1:len(E)//2], "b", label="MH k_red, step 1")
-ax2.semilogy(E_half, kMH2_s[1:len(E)//2], "c", label="MH k_red, step 2")
-ax2.set_xlabel("E - E₀₁ / V")
-ax2.set_ylabel("k_red (s⁻¹)")
-ax2.set_title("Reduction Rate Constants")
+ax2.plot(E, result.fO[1:], label="fO")
+ax2.plot(E, result.fR[1:], label="fR")
+ax2.plot(E, result.fI[1:], label="fI")
+ax2.set_xlabel("E / V")
+ax2.set_ylabel("Surface excess")
+ax2.set_title("fO, fR, fI vs potential")
 ax2.legend()
 ax2.grid(True)
 st.pyplot(fig2)
+
+# ------------------ File Downloads ------------------
+st.subheader("Download Data as .txt")
+
+def make_txt_download(filename, header, data):
+    buffer = io.StringIO()
+    np.savetxt(buffer, data, header=header)
+    st.download_button(
+        label=f"Download {filename}",
+        data=buffer.getvalue(),
+        file_name=filename,
+        mime="text/plain"
+    )
+
+# Prepare data
+mh_data = np.column_stack((E, result.IntMH[1:]))
+bv_data = np.column_stack((E, result.IntBV[1:]))
+surf_data = np.column_stack((E, result.fO[1:], result.fR[1:], result.fI[1:]))
+
+# Download buttons
+make_txt_download("MH_curve.txt", "E (V)\tIntMH", mh_data)
+make_txt_download("BV_curve.txt", "E (V)\tIntBV", bv_data)
+make_txt_download("surface_excesses.txt", "E (V)\tfO\tfR\tfI", surf_data)
