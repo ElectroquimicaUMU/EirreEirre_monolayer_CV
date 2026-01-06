@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.integrate as integrate
+from scipy.signal import find_peaks
 from collections import namedtuple
 
 # ---------------------------------------------------------------------
@@ -29,21 +30,29 @@ CVResult = namedtuple(
 # ---------------------------------------------------------------------
 def _find_peaks(E, I):
     """
-    Identify the two most intense peaks (by |I|),
-    without assuming anodic/cathodic character.
+    Detect up to two distinct voltammetric peaks (local extrema),
+    independent of anodic/cathodic labeling.
     """
     E = np.asarray(E)
     I = np.asarray(I)
 
-    idx = np.argsort(np.abs(I))[-2:][::-1]
-    i1, i2 = idx[0], idx[1]
+    idx_max, _ = find_peaks(I)
+    idx_min, _ = find_peaks(-I)
 
-    return {
-        "E_peak1": E[i1],
-        "I_peak1": I[i1],
-        "E_peak2": E[i2],
-        "I_peak2": I[i2],
-    }
+    idx_all = np.unique(np.concatenate([idx_max, idx_min]))
+    if idx_all.size == 0:
+        return {}
+
+    # Sort peaks by absolute current magnitude
+    order = np.argsort(np.abs(I[idx_all]))[::-1]
+    idx_all = idx_all[order]
+
+    peaks = {}
+    for n, idx in enumerate(idx_all[:2], start=1):
+        peaks[f"E_peak{n}"] = E[idx]
+        peaks[f"I_peak{n}"] = I[idx]
+
+    return peaks
 
 # ---------------------------------------------------------------------
 def CVsim(
@@ -75,6 +84,7 @@ def CVsim(
     fO_MH, fI_MH, fR_MH = [1.0] * nt, [0.0] * nt, [0.0] * nt
     fO_BV, fI_BV, fR_BV = [1.0] * nt, [0.0] * nt, [0.0] * nt
 
+    # MH normalization constants
     S01 = integrate.quad(
         lambda x: np.exp(-lambda1 / 4 * (1 + x / lambda1) ** 2)
         / (1 + np.exp(-x)),
@@ -89,17 +99,20 @@ def CVsim(
         50,
     )[0]
 
+    # -----------------------------------------------------------------
     for i in range(1, nt):
         Pot[i] = Pot[i - 1] - Es if i < nt / 2 else Pot[i - 1] + Es
         nu1 = FRT * Pot[i]
         nu2 = FRT * (Pot[i] - E02)
 
+        # -------- Marcus–Hush --------
         MH1 = integrate.quad(
             lambda x: np.exp(-lambda1 / 4 * (1 + (nu1 + x) / lambda1) ** 2)
             / (1 + np.exp(-x)),
             -50,
             50,
         )[0]
+
         MH2 = integrate.quad(
             lambda x: np.exp(-lambda2 / 4 * (1 + (nu2 + x) / lambda2) ** 2)
             / (1 + np.exp(-x)),
@@ -123,6 +136,7 @@ def CVsim(
         fI_MH[i] = 1 - fO_MH[i] - fR_MH[i]
         IntMH[i] = (fO_MH[i] * kMH1red[i] + fI_MH[i] * kMH2red[i]) / Es / FRT
 
+        # -------- Butler–Volmer --------
         kBV1red[i] = k01 * tau * np.exp(-alpha * nu1)
         kBV2red[i] = k02 * tau * np.exp(-alpha * nu2)
 

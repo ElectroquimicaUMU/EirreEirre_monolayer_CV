@@ -8,6 +8,7 @@ from main import CVsim, FRT
 st.set_page_config(layout="wide")
 st.title("Marcus–Hush vs Butler–Volmer CV Simulator")
 
+# ---------------------------------------------------------------------
 with st.sidebar:
     lambda1 = st.slider("λ (eV)", 0.1, 2.0, 0.5, 0.1)
     surface_model = st.selectbox("Surface excess model", ["MH", "BV"])
@@ -35,7 +36,7 @@ res = CVsim(
 
 E = res.Pot[1:]
 
-# --- CV ---
+# ---------------------------------------------------------------------
 st.subheader("Voltammograms")
 fig, ax = plt.subplots()
 ax.plot(E, res.IntMH[1:], label="MH")
@@ -45,7 +46,7 @@ ax.set_ylabel("Ψ")
 ax.legend()
 st.pyplot(fig)
 
-# --- Surface excess ---
+# ---------------------------------------------------------------------
 st.subheader(f"Surface excesses ({surface_model})")
 fig, ax = plt.subplots()
 ax.plot(E, res.fO[1:], label="fO")
@@ -54,7 +55,7 @@ ax.plot(E, res.fI[1:], label="fI")
 ax.legend()
 st.pyplot(fig)
 
-# --- Rate constants ---
+# ---------------------------------------------------------------------
 st.subheader("Rate constants (k_red)")
 fig, ax = plt.subplots()
 ax.semilogy(E, res.kMH1red_s[1:], label="MH k_red 1")
@@ -64,8 +65,21 @@ ax.semilogy(E, res.kBV2red_s[1:], "--", label="BV k_red 2")
 ax.legend()
 st.pyplot(fig)
 
-# --- Peaks ---
-st.subheader("Voltammetric peak coordinates")
-df = pd.DataFrame(res.peaks).T
-df.columns = ["E_peak 1 (V)", "I_peak 1", "E_peak 2 (V)", "I_peak 2"]
+# ---------------------------------------------------------------------
+st.subheader("Detected peak coordinates")
+
+rows = []
+for model, peaks in res.peaks.items():
+    for n in [1, 2]:
+        if f"E_peak{n}" in peaks:
+            rows.append(
+                {
+                    "Model": model,
+                    "Peak": n,
+                    "E (V)": peaks[f"E_peak{n}"],
+                    "I": peaks[f"I_peak{n}"],
+                }
+            )
+
+df = pd.DataFrame(rows)
 st.dataframe(df)
