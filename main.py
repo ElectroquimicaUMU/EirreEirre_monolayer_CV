@@ -2,6 +2,7 @@ import numpy as np
 import scipy.integrate as integrate
 from collections import namedtuple
 
+# ---------------------------------------------------------------------
 FRT = 38.923074
 
 CVResult = namedtuple(
@@ -27,13 +28,21 @@ CVResult = namedtuple(
 
 # ---------------------------------------------------------------------
 def _find_peaks(E, I):
-    idx_c = np.argmin(I)
-    idx_a = np.argmax(I)
+    """
+    Identify the two most intense peaks (by |I|),
+    without assuming anodic/cathodic character.
+    """
+    E = np.asarray(E)
+    I = np.asarray(I)
+
+    idx = np.argsort(np.abs(I))[-2:][::-1]
+    i1, i2 = idx[0], idx[1]
+
     return {
-        "E_pc": E[idx_c],
-        "I_pc": I[idx_c],
-        "E_pa": E[idx_a],
-        "I_pa": I[idx_a],
+        "E_peak1": E[i1],
+        "I_peak1": I[i1],
+        "E_peak2": E[i2],
+        "I_peak2": I[i2],
     }
 
 # ---------------------------------------------------------------------

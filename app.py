@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import io
 
 from main import CVsim, FRT
 
@@ -41,9 +40,9 @@ st.subheader("Voltammograms")
 fig, ax = plt.subplots()
 ax.plot(E, res.IntMH[1:], label="MH")
 ax.plot(E, res.IntBV[1:], "--", label="BV")
-ax.legend()
 ax.set_xlabel("E / V")
 ax.set_ylabel("Ψ")
+ax.legend()
 st.pyplot(fig)
 
 # --- Surface excess ---
@@ -55,20 +54,18 @@ ax.plot(E, res.fI[1:], label="fI")
 ax.legend()
 st.pyplot(fig)
 
-# --- k_red / k_ox ---
-st.subheader("Rate constants")
+# --- Rate constants ---
+st.subheader("Rate constants (k_red)")
 fig, ax = plt.subplots()
 ax.semilogy(E, res.kMH1red_s[1:], label="MH k_red 1")
 ax.semilogy(E, res.kMH2red_s[1:], label="MH k_red 2")
 ax.semilogy(E, res.kBV1red_s[1:], "--", label="BV k_red 1")
 ax.semilogy(E, res.kBV2red_s[1:], "--", label="BV k_red 2")
 ax.legend()
-ax.set_xlabel("E / V")
-ax.set_ylabel("k (s⁻¹)")
 st.pyplot(fig)
 
 # --- Peaks ---
-st.subheader("Voltammetric peaks")
+st.subheader("Voltammetric peak coordinates")
 df = pd.DataFrame(res.peaks).T
+df.columns = ["E_peak 1 (V)", "I_peak 1", "E_peak 2 (V)", "I_peak 2"]
 st.dataframe(df)
-
