@@ -11,16 +11,16 @@ st.title("Marcus–Hush vs Butler–Volmer CV Simulator")
 
 # ---------------------------------------------------------------------
 with st.sidebar:
-    lambda1 = st.slider("λ (eV)", 0.1, 2.0, 0.5, 0.1)
+    lambda1 = st.number_input("λ (eV)", value=0.5, step=0.01)
     surface_model = st.selectbox("Surface excess model", ["MH", "BV"])
-    k01 = st.number_input("k01 (s⁻¹)", 0.1)
-    k02 = st.number_input("k02 (s⁻¹)", 0.1)
-    E02 = st.number_input("E02 (V)", -0.25)
-    alpha = st.slider("α", 0.1, 1.0, 0.5)
-    Es = st.number_input("Es (V)", 1e-3, format="%.1e")
-    Ein = st.number_input("Ein (V)", 0.25)
-    Efin = st.number_input("Efin (V)", -0.7)
-    rate = st.number_input("Scan rate (V/s)", 0.1)
+    k01 = st.number_input("k01 (s⁻¹)", value=0.1, step=0.01, format="%.3f")
+    k02 = st.number_input("k02 (s⁻¹)", value=0.1, step=0.01, format="%.3f")
+    E02 = st.number_input("E02 (V)", value=-0.25, step=0.001, format="%.3f")
+    alpha = st.number_input("α", value=0.5, step=0.01)
+    Es = st.number_input("Es (V)", value=1e-3, step=1e-4, format="%.4f")
+    Ein = st.number_input("Ein (V)", value=0.25, step=0.001, format="%.3f")
+    Efin = st.number_input("Efin (V)", value=-0.7, step=0.001, format="%.3f")
+    rate = st.number_input("Scan rate (V/s)", value=0.1, step=0.01, format="%.3f")
 
 res = CVsim(
     lambda1 * FRT,
