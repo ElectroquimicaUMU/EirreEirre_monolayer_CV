@@ -5,6 +5,7 @@ from collections import namedtuple
 
 # ---------------------------------------------------------------------
 FRT = 38.923074
+INTEGRATION_LIMIT = 200
 
 CVResult = namedtuple(
     "CVResult",
@@ -69,7 +70,8 @@ def CVsim(
 ):
     lambda2 = lambda1
     tau = Es / rate
-    nt = int(2 * abs(Efin - Ein) / Es)
+    n_half = int(round(abs(Efin - Ein) / Es))
+    nt = 2 * n_half + 1
 
     Pot = [Ein] * nt
 
@@ -88,20 +90,20 @@ def CVsim(
     S01 = integrate.quad(
         lambda x: np.exp(-lambda1 / 4 * (1 + x / lambda1) ** 2)
         / (1 + np.exp(-x)),
-        -50,
-        50,
+        -INTEGRATION_LIMIT,
+        INTEGRATION_LIMIT,
     )[0]
 
     S02 = integrate.quad(
         lambda x: np.exp(-lambda2 / 4 * (1 + x / lambda2) ** 2)
         / (1 + np.exp(-x)),
-        -50,
-        50,
+        -INTEGRATION_LIMIT,
+        INTEGRATION_LIMIT,
     )[0]
 
     # -----------------------------------------------------------------
     for i in range(1, nt):
-        Pot[i] = Pot[i - 1] - Es if i < nt / 2 else Pot[i - 1] + Es
+        Pot[i] = Pot[i - 1] - Es if i <= n_half else Pot[i - 1] + Es
         nu1 = FRT * Pot[i]
         nu2 = FRT * (Pot[i] - E02)
 
@@ -109,15 +111,15 @@ def CVsim(
         MH1 = integrate.quad(
             lambda x: np.exp(-lambda1 / 4 * (1 + (nu1 + x) / lambda1) ** 2)
             / (1 + np.exp(-x)),
-            -50,
-            50,
+            -INTEGRATION_LIMIT,
+            INTEGRATION_LIMIT,
         )[0]
 
         MH2 = integrate.quad(
             lambda x: np.exp(-lambda2 / 4 * (1 + (nu2 + x) / lambda2) ** 2)
             / (1 + np.exp(-x)),
-            -50,
-            50,
+            -INTEGRATION_LIMIT,
+            INTEGRATION_LIMIT,
         )[0]
 
         kMH1red[i] = k01 * tau * MH1 / S01
