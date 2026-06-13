@@ -7,7 +7,7 @@ import io
 from main import CVsim, FRT
 
 st.set_page_config(layout="wide")
-st.title("Marcus–Hush vs Butler–Volmer CV Simulator")
+st.title("Marcus–Hush vs Butler–Volmer LSV Simulator")
 
 # ---------------------------------------------------------------------
 with st.sidebar:
@@ -38,7 +38,7 @@ res = CVsim(
 E = res.Pot[1:]
 
 # ---------------------------------------------------------------------
-st.subheader("Voltammograms")
+st.subheader("LSVoltammograms")
 fig, ax = plt.subplots()
 ax.plot(E, res.IntMH[1:], label="MH")
 ax.plot(E, res.IntBV[1:], "--", label="BV")
