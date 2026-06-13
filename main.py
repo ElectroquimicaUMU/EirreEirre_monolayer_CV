@@ -70,8 +70,7 @@ def CVsim(
 ):
     lambda2 = lambda1
     tau = Es / rate
-    n_half = int(round(abs(Efin - Ein) / Es))
-    nt = 2 * n_half + 1
+    nt = int(round(abs(Efin - Ein) / Es)) + 1
 
     Pot = [Ein] * nt
 
@@ -103,7 +102,7 @@ def CVsim(
 
     # -----------------------------------------------------------------
     for i in range(1, nt):
-        Pot[i] = Pot[i - 1] - Es if i <= n_half else Pot[i - 1] + Es
+        Pot[i] = Pot[i - 1] - Es
         nu1 = FRT * Pot[i]
         nu2 = FRT * (Pot[i] - E02)
 
